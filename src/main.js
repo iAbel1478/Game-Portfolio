@@ -1,7 +1,9 @@
+// Import necessary modules and initialize the game
 import { dialogueData, scaleFactor } from "./constants";
 import { k } from "./kaboomCtx";
 import { displayDialogue, setCamScale } from "./utils";
 
+// Load sprites and animations
 k.loadSprite("spritesheet", "./spritesheet.png", {
   sliceX: 39,
   sliceY: 31,
@@ -15,16 +17,21 @@ k.loadSprite("spritesheet", "./spritesheet.png", {
   },
 });
 
-k.loadSprite("map", "./map.png");
+k.loadSprite("map2", "./map2.png");
 
+// Set the background color
 k.setBackground(k.Color.fromHex("#311047"));
 
+// Define the main scene
 k.scene("main", async () => {
-  const mapData = await (await fetch("./map.json")).json();
-  const layers = mapData.layers;
+  // Load map data
+  const map2Data = await (await fetch("./map2.json")).json();
+  const layers = map2Data.layers;
 
-  const map = k.add([k.sprite("map"), k.pos(0), k.scale(scaleFactor)]);
+  // Add the map to the scene
+  const map2 = k.add([k.sprite("map2"), k.pos(0), k.scale(scaleFactor)]);
 
+  // Define the player object and its properties
   const player = k.make([
     k.sprite("spritesheet", { anim: "idle-down" }),
     k.area({
@@ -42,10 +49,11 @@ k.scene("main", async () => {
     "player",
   ]);
 
+  // Process map layers to add boundaries and spawn points
   for (const layer of layers) {
     if (layer.name === "boundaries") {
       for (const boundary of layer.objects) {
-        map.add([
+        map2.add([
           k.area({
             shape: new k.Rect(k.vec2(0), boundary.width, boundary.height),
           }),
@@ -64,7 +72,6 @@ k.scene("main", async () => {
           });
         }
       }
-
       continue;
     }
 
@@ -72,8 +79,8 @@ k.scene("main", async () => {
       for (const entity of layer.objects) {
         if (entity.name === "player") {
           player.pos = k.vec2(
-            (map.pos.x + entity.x) * scaleFactor,
-            (map.pos.y + entity.y) * scaleFactor
+            (map2.pos.x + entity.x) * scaleFactor,
+            (map2.pos.y + entity.y) * scaleFactor
           );
           k.add(player);
           continue;
@@ -82,16 +89,18 @@ k.scene("main", async () => {
     }
   }
 
+  // Set camera scale and update on resize
   setCamScale(k);
-
   k.onResize(() => {
     setCamScale(k);
   });
 
+  // Update camera position to follow the player
   k.onUpdate(() => {
     k.camPos(player.worldPos().x, player.worldPos().y - 100);
   });
 
+  // Handle mouse click to move the player
   k.onMouseDown((mouseBtn) => {
     if (mouseBtn !== "left" || player.isInDialogue) return;
 
@@ -138,6 +147,7 @@ k.scene("main", async () => {
     }
   });
 
+  // Function to stop animations and set idle animations
   function stopAnims() {
     if (player.direction === "down") {
       player.play("idle-down");
@@ -151,13 +161,15 @@ k.scene("main", async () => {
     player.play("idle-side");
   }
 
+  // Event listeners to stop animations on mouse release and key release
   k.onMouseRelease(stopAnims);
-
   k.onKeyRelease(() => {
     stopAnims();
   });
+
+  // Handle key down events to move the player and play animations
   k.onKeyDown((key) => {
-    const keyMap = [
+    const keymap2 = [
       k.isKeyDown("right"),
       k.isKeyDown("left"),
       k.isKeyDown("up"),
@@ -165,7 +177,7 @@ k.scene("main", async () => {
     ];
 
     let nbOfKeyPressed = 0;
-    for (const key of keyMap) {
+    for (const key of keymap2) {
       if (key) {
         nbOfKeyPressed++;
       }
@@ -174,7 +186,8 @@ k.scene("main", async () => {
     if (nbOfKeyPressed > 1) return;
 
     if (player.isInDialogue) return;
-    if (keyMap[0]) {
+
+    if (keymap2[0]) {
       player.flipX = false;
       if (player.curAnim() !== "walk-side") player.play("walk-side");
       player.direction = "right";
@@ -182,7 +195,7 @@ k.scene("main", async () => {
       return;
     }
 
-    if (keyMap[1]) {
+    if (keymap2[1]) {
       player.flipX = true;
       if (player.curAnim() !== "walk-side") player.play("walk-side");
       player.direction = "left";
@@ -190,14 +203,14 @@ k.scene("main", async () => {
       return;
     }
 
-    if (keyMap[2]) {
+    if (keymap2[2]) {
       if (player.curAnim() !== "walk-up") player.play("walk-up");
       player.direction = "up";
       player.move(0, -player.speed);
       return;
     }
 
-    if (keyMap[3]) {
+    if (keymap2[3]) {
       if (player.curAnim() !== "walk-down") player.play("walk-down");
       player.direction = "down";
       player.move(0, player.speed);
@@ -205,4 +218,5 @@ k.scene("main", async () => {
   });
 });
 
+// Start the main scene
 k.go("main");
